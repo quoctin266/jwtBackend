@@ -9,7 +9,19 @@ const hashPassword = async (password) => {
 };
 
 const getUsersService = async () => {
-  const users = await db.User.findAll();
+  const users = await db.User.findAll({
+    include: db.Group,
+    raw: true,
+    nest: true,
+  });
+
+  console.log(users);
+  // const users = await db.User.findOne({
+  //   where: { id: 1 },
+  //   include: db.Group,
+  // });
+
+  // console.log(users.get({ plain: true }));
   return users;
 };
 
