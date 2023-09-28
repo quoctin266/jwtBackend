@@ -1,5 +1,7 @@
 import bcrypt from "bcryptjs";
 import db from "../model/index";
+import { raw } from "mysql2";
+import { Op } from "sequelize";
 
 const hashPassword = async (password) => {
   const salt = await bcrypt.genSalt(10);
@@ -26,13 +28,48 @@ const getUsersService = async () => {
 };
 
 const craeteUserService = async (data) => {
+  let hashPW = await hashPassword(data.password);
+
   await db.User.create({
-    firstName: data.firstName,
-    lastName: data.lastName,
     email: data.email,
+    username: data.username,
+    password: hashPW,
+    phone: data.phone,
   });
 
   return "ok";
+};
+
+const loginService = async (data) => {
+  const user = await db.User.findOne({
+    where: {
+      [Op.or]: [{ email: data.valueLogin }, { phone: data.valueLogin }],
+    },
+    raw: true,
+  });
+
+  if (!user) {
+    return {
+      EC: -1,
+      EM: "user not found",
+      DT: null,
+    };
+  }
+
+  let result = await bcrypt.compare(data.password, user.password);
+  if (!result) {
+    return {
+      EC: -2,
+      EM: "wrong password",
+      DT: null,
+    };
+  }
+
+  return {
+    EC: 0,
+    EM: "ok",
+    DT: data,
+  };
 };
 
 const deleteUserService = async (id) => {
@@ -64,4 +101,5 @@ module.exports = {
   craeteUserService,
   deleteUserService,
   updateUserService,
+  loginService,
 };
