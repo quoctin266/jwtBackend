@@ -9,7 +9,9 @@ import {
 const getAllUsers = async (req, res) => {
   let users = await getUsersService();
   res.status(200).json({
-    data: users,
+    DT: users,
+    EC: 0,
+    EM: "ok",
   });
 };
 

@@ -12,9 +12,7 @@ const hashPassword = async (password) => {
 
 const getUsersService = async () => {
   const users = await db.User.findAll({
-    include: db.Group,
-    raw: true,
-    nest: true,
+    include: { model: db.Group, attributes: ["name", "description"] },
   });
 
   console.log(users);
