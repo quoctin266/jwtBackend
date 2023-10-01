@@ -1,7 +1,8 @@
 import bcrypt from "bcryptjs";
 import db from "../model/index";
-import { raw } from "mysql2";
 import { Op } from "sequelize";
+import { getGroupWithRoles } from "./groupService";
+import { createJWT } from "../middleware/jwtService";
 
 const hashPassword = async (password) => {
   const salt = await bcrypt.genSalt(10);
@@ -10,19 +11,37 @@ const hashPassword = async (password) => {
   return hashPassword;
 };
 
-const getUsersService = async () => {
-  const users = await db.User.findAll({
-    include: { model: db.Group, attributes: ["name", "description"] },
-  });
+const getUsersService = async (page, limit) => {
+  if (page && limit) {
+    let offset = (page - 1) * limit;
 
-  console.log(users);
-  // const users = await db.User.findOne({
-  //   where: { id: 1 },
-  //   include: db.Group,
-  // });
+    const { count, rows } = await db.User.findAndCountAll({
+      attributes: { exclude: ["password"] },
+      include: { model: db.Group, attributes: ["name", "description"] },
+      offset: offset,
+      limit: limit,
+    });
 
-  // console.log(users.get({ plain: true }));
-  return users;
+    let totalPages = Math.ceil(count / limit);
+
+    return {
+      users: rows,
+      totalPages: totalPages,
+      totalRows: count,
+    };
+  } else {
+    const users = await db.User.findAll({
+      include: { model: db.Group, attributes: ["name", "description"] },
+    });
+
+    // const users = await db.User.findOne({
+    //   where: { id: 1 },
+    //   include: db.Group,
+    // });
+
+    // console.log(users.get({ plain: true }));
+    return users;
+  }
 };
 
 const craeteUserService = async (data) => {
@@ -33,6 +52,7 @@ const craeteUserService = async (data) => {
     username: data.username,
     password: hashPW,
     phone: data.phone,
+    groupId: 2,
   });
 
   return "ok";
@@ -55,6 +75,7 @@ const loginService = async (data) => {
   }
 
   let result = await bcrypt.compare(data.password, user.password);
+
   if (!result) {
     return {
       EC: -2,
@@ -63,10 +84,20 @@ const loginService = async (data) => {
     };
   }
 
+  let roles = await getGroupWithRoles(user);
+  let payload = {
+    email: user.email,
+    roles,
+  };
+  let token = createJWT(payload);
+
   return {
     EC: 0,
     EM: "ok",
-    DT: data,
+    DT: {
+      accessToken: token,
+      data: roles,
+    },
   };
 };
 

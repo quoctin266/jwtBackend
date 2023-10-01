@@ -7,7 +7,10 @@ import {
 } from "../service/userService";
 
 const getAllUsers = async (req, res) => {
-  let users = await getUsersService();
+  const { page, limit } = req.query;
+
+  let users = await getUsersService(+page, +limit);
+
   res.status(200).json({
     DT: users,
     EC: 0,
@@ -26,16 +29,19 @@ const postCreateUser = async (req, res) => {
 const postLogin = async (req, res) => {
   let result = await loginService(req.body);
 
+  res.cookie("jwt", result.DT.accessToken, { httpOnly: true });
   res.status(200).json(result);
 };
 
 const deleteUser = async (req, res) => {
   let id = req.body.id;
 
-  let result = await deleteUserService(id);
+  await deleteUserService(id);
 
   res.status(200).json({
-    data: result,
+    DT: null,
+    EC: 0,
+    EM: "ok",
   });
 };
 
