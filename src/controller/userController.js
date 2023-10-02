@@ -29,7 +29,13 @@ const postCreateUser = async (req, res) => {
 const postLogin = async (req, res) => {
   let result = await loginService(req.body);
 
-  res.cookie("jwt", result.DT.accessToken, { httpOnly: true });
+  if (result.DT?.accessToken) {
+    res.cookie("jwt", result.DT.accessToken, {
+      httpOnly: true,
+      maxAge: 60 * 60 * 1000,
+    });
+  }
+
   res.status(200).json(result);
 };
 
@@ -53,10 +59,15 @@ const putUpdateUser = async (req, res) => {
   });
 };
 
+const getUserAccount = async (req, res) => {
+  console.log(req.user);
+};
+
 module.exports = {
   getAllUsers,
   postCreateUser,
   deleteUser,
   putUpdateUser,
   postLogin,
+  getUserAccount,
 };

@@ -97,6 +97,8 @@ const loginService = async (data) => {
     DT: {
       accessToken: token,
       data: roles,
+      email: user.email,
+      username: user.username,
     },
   };
 };
